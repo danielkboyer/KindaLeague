@@ -6,4 +6,4 @@ const ENDPOINT = (window.location.hostname.indexOf("heroku") >= 0 || window.loca
     ? `${ PROTOCOL }//${ window.location.hostname }` // port 80 on heroku or now
     : `${ PROTOCOL }//${ window.location.hostname }:2657` // port 2657 on localhost
 
-export const client = new Client("18.222.192.30:8080");
+export const client = new Client(ENDPOINT);

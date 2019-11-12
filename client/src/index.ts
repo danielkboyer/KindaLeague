@@ -30,7 +30,7 @@ camera.attachControl(canvas, true);
 var light = new BABYLON.HemisphericLight("light1", new BABYLON.Vector3(0, 1, 0), scene);
 
 // Default intensity is 1. Let's dim the light a small amount
-light.intensity = .2;
+light.intensity = .5;
 
 // Our built-in 'ground' shape. Params: name, width, depth, subdivs, scene
 var ground = BABYLON.Mesh.CreateGround("ground1", 6, 6, 2, scene);
