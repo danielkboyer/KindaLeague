@@ -8,7 +8,9 @@ import { client } from "./game/network";
 // Re-using server-side types for networking
 // This is optional, but highly recommended
 import { StateHandler } from "../../server/src/rooms/StateHandler";
-import { PressedKeys } from "../../server/src/entities/Player";
+import { PressedKeys, Position } from "../../server/src/entities/Player";
+import { ClientPlayer } from "./game/model/ClientPlayer";
+import { Vector3, CameraInputTypes } from "babylonjs";
 
 const canvas = document.getElementById('game') as HTMLCanvasElement;
 
@@ -17,6 +19,7 @@ const engine = new BABYLON.Engine(canvas, true);
 // This creates a basic Babylon Scene object (non-mesh)
 var scene = new BABYLON.Scene(engine);
 
+// This creates and positions a free camera (non-mesh)
 // This creates and positions a free camera (non-mesh)
 var camera = new BABYLON.FollowCamera("camera1", new BABYLON.Vector3(0, 5, -10), scene);
 
@@ -35,32 +38,63 @@ light.intensity = .5;
 // Our built-in 'ground' shape. Params: name, width, depth, subdivs, scene
 var ground = BABYLON.Mesh.CreateGround("ground1", 6, 6, 2, scene);
 
+console.log("Created Ground");
 // Attach default camera mouse navigation
 // camera.attachControl(canvas);
 
 // Colyseus / Join Room
 client.joinOrCreate<StateHandler>("game").then(room => {
-    const playerViews: {[id: string]: BABYLON.Mesh} = {};
+    const playerViews: {[id: string]: ClientPlayer} = {};
 
+    console.log("Room started on client: "+room.name);
     room.state.players.onAdd = function(player, key) {
         // Our built-in 'sphere' shape. Params: name, subdivs, size, scene
-        playerViews[key] = BABYLON.Mesh.CreateSphere("sphere1", 16, 2, scene);
+        console.log("User joined room: "+player.name+" mesh position: "+player.position);
+        playerViews[key] = {mesh: BABYLON.Mesh.CreateSphere("sphere1", 16, 2, scene)};
+      
+        // playerViews[key].camera.radius = 30;
 
+        // playerViews[key].camera.heightOffset = 10;
+
+        // playerViews[key].camera.rotationOffset = 0;
+
+        // playerViews[key].camera.cameraAcceleration = 0.005;
+
+        // playerViews[key].camera.maxCameraSpeed = 10;
+
+        
+       
         // Move the sphere upward 1/2 its height
-        playerViews[key].position.set(player.position.x, player.position.y, player.position.z);
+        playerViews[key].mesh.position = new Vector3(player.position.x,player.position.y,player.position.z);
 
-        // Set camera to follow current player
-        if (key === room.sessionId) {
-            camera.setTarget(playerViews[key].position);
+    
+
+        if(key === room.sessionId){
+
+            console.log("Setting active camera for "+room.sessionId);
+            camera.setTarget(playerViews[key].mesh.position);
+           // scene.activeCamera = playerViews[key].camera;
+            
         }
+        // Set camera to follow current player
+    
+        
     };
 
     room.state.players.onChange = function(player, key) {
-        playerViews[key].position.set(player.position.x, player.position.y, player.position.z);
+
+        
+        playerViews[key].mesh.position = PositionToVector(player.position);
+        //playerViews[key].camera.position = PositionToVector(player.position);
+        //playerViews[key].camera.position.y -=15;
+        if(room.sessionId === key){
+            camera.setTarget(playerViews[key].mesh.position);
+        }
     };
 
     room.state.players.onRemove = function(player, key) {
-        scene.removeMesh(playerViews[key]);
+        scene.removeMesh(playerViews[key].mesh);
+        
         delete playerViews[key];
     };
 
@@ -101,6 +135,10 @@ client.joinOrCreate<StateHandler>("game").then(room => {
         engine.resize();
     });
 });
+
+function PositionToVector(pos: Position){
+    return new Vector3(pos.x,pos.y,pos.z);
+}
 
 // Scene render loop
 engine.runRenderLoop(function() {

@@ -18,6 +18,7 @@
     "typescript": "^3.5.1"
   },
   "dependencies": {
+    "babylonjs": "^4.0.3",
     "colyseus": "^0.11.0",
     "cors": "^2.8.1",
     "express": "^4.14.0"
