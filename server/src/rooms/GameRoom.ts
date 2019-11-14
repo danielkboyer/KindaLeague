@@ -1,9 +1,10 @@
 import { Room, Client } from "colyseus";
 
 import { StateHandler } from "./StateHandler";
-import { Player, Position } from "../entities/Player";
+import { ServerPlayer, Position } from "../entities/ServerEntities";
 import * as BABYLON from "babylonjs";
-import { Vector3 } from "babylonjs";
+
+import {physicsPlayers, PhysicPlayer} from "../entities/PhysicsEntities";
 
 export class GameRoom extends Room<StateHandler> {
     maxClients = 8;
@@ -16,29 +17,31 @@ export class GameRoom extends Room<StateHandler> {
     }
 
     onJoin (client) {
-        const player = new Player();
+        const player = new ServerPlayer();
         player.name = `Player ${ client.sessionId }`;
 
-        player.setMesh(BABYLON.Mesh.CreateSphere("sphere1", 16, 2, this.state.scene));
-        player.setPosition(new Position(Math.random(),Math.random(),Math.random()));
-        console.log("Created player "+client.sessionId+" position: "+player.position);
+        console.log(player.name + " Joined the server");
+        player.position.x = Math.random();
+        player.position.y = Math.random();
+        player.position.z = Math.random();
+        physicsPlayers[client.sessionId] = new PhysicPlayer(client.sessionId,BABYLON.Mesh.CreateSphere("sphere1", 16, 2, this.state.scene),new BABYLON.Vector3(player.position.x,player.position.y,player.position.z));
+
         this.state.players[client.sessionId] = player;
     }
 
     onMessage (client: Client, message: any) {
         const [event, data] = message;
-        const player: Player = this.state.players[client.sessionId];
+        const player: PhysicPlayer = physicsPlayers[client.sessionId];
 
-        if (event === "key") {
-            player.pressedKeys = data;
+        if (event === "playerMove") {
+            player.clickPosition = new BABYLON.Vector3(data.x,data.y,data.z);
         }
     }
 
     onUpdate () {
         for (const sessionId in this.state.players) {
-            const player: Player = this.state.players[sessionId];
-            player.setPositionX(player.position.x+ (player.pressedKeys.x*.1));
-            player.setPositionZ(player.position.z - (player.pressedKeys.y*0.1));
+            const player: ServerPlayer = this.state.players[sessionId];
+            player.PopulateServerPlayer(physicsPlayers[sessionId]);
     
         }
     }

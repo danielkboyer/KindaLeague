@@ -8,7 +8,7 @@ import { client } from "./game/network";
 // Re-using server-side types for networking
 // This is optional, but highly recommended
 import { StateHandler } from "../../server/src/rooms/StateHandler";
-import { PressedKeys, Position } from "../../server/src/entities/Player";
+import {  Position, MouseClick } from "../../server/src/entities/ServerEntities";
 import { ClientPlayer } from "./game/model/ClientPlayer";
 import { Vector3, CameraInputTypes } from "babylonjs";
 
@@ -21,14 +21,23 @@ var scene = new BABYLON.Scene(engine);
 
 // This creates and positions a free camera (non-mesh)
 // This creates and positions a free camera (non-mesh)
-var camera = new BABYLON.FollowCamera("camera1", new BABYLON.Vector3(0, 5, -10), scene);
+var camera = new BABYLON.UniversalCamera("camera1", new BABYLON.Vector3(0, 5, -10), scene);
 
+//Units
+var cameraZOffset = 3;
+//Units
+var cameraYHeight = 15;
+//Degrees
+var cameraXRotation = 76;
 // This targets the camera to scene origin
-camera.setTarget(BABYLON.Vector3.Zero());
+camera.rotation.x = BABYLON.Tools.ToRadians(cameraXRotation);
+camera.rotation.y = Math.PI;
+camera.rotation.z = 0;
 
 // This attaches the camera to the canvas
 camera.attachControl(canvas, true);
 
+camera.inputs.clear();
 // This creates a light, aiming 0,1,0 - to the sky (non-mesh)
 var light = new BABYLON.HemisphericLight("light1", new BABYLON.Vector3(0, 1, 0), scene);
 
@@ -48,22 +57,12 @@ client.joinOrCreate<StateHandler>("game").then(room => {
 
     console.log("Room started on client: "+room.name);
     room.state.players.onAdd = function(player, key) {
+
         // Our built-in 'sphere' shape. Params: name, subdivs, size, scene
         console.log("User joined room: "+player.name+" mesh position: "+player.position);
         playerViews[key] = {mesh: BABYLON.Mesh.CreateSphere("sphere1", 16, 2, scene)};
       
-        // playerViews[key].camera.radius = 30;
-
-        // playerViews[key].camera.heightOffset = 10;
-
-        // playerViews[key].camera.rotationOffset = 0;
-
-        // playerViews[key].camera.cameraAcceleration = 0.005;
-
-        // playerViews[key].camera.maxCameraSpeed = 10;
-
-        
-       
+    
         // Move the sphere upward 1/2 its height
         playerViews[key].mesh.position = new Vector3(player.position.x,player.position.y,player.position.z);
 
@@ -72,7 +71,9 @@ client.joinOrCreate<StateHandler>("game").then(room => {
         if(key === room.sessionId){
 
             console.log("Setting active camera for "+room.sessionId);
-            camera.setTarget(playerViews[key].mesh.position);
+            camera.position = new BABYLON.Vector3(player.position.x,cameraYHeight,player.position.z+cameraZOffset);
+            //camera.rotation.z = 10;
+            //camera.setTarget(playerViews[key].mesh.position);
            // scene.activeCamera = playerViews[key].camera;
             
         }
@@ -83,12 +84,15 @@ client.joinOrCreate<StateHandler>("game").then(room => {
 
     room.state.players.onChange = function(player, key) {
 
-        
+        console.log("Server moved player move locally");
         playerViews[key].mesh.position = PositionToVector(player.position);
         //playerViews[key].camera.position = PositionToVector(player.position);
         //playerViews[key].camera.position.y -=15;
         if(room.sessionId === key){
-            camera.setTarget(playerViews[key].mesh.position);
+            camera.position = new BABYLON.Vector3(player.position.x,cameraYHeight,player.position.z+cameraZOffset);
+            //camera.setTarget(playerViews[key].mesh.position);
+            //console.log("Camear position: x"+camera.rotation.x+" y:"+camera.rotation.y+" z:"+camera.rotation.z);
+       
         }
     };
 
@@ -102,33 +106,30 @@ client.joinOrCreate<StateHandler>("game").then(room => {
         console.log("New room state:", state.toJSON());
     });
 
-    // Keyboard listeners
-    const keyboard: PressedKeys = { x: 0, y: 0 };
-    window.addEventListener("keydown", function(e) {
-        if (e.which === Keycode.LEFT) {
-            keyboard.x = -1;
-        } else if (e.which === Keycode.RIGHT) {
-            keyboard.x = 1;
-        } else if (e.which === Keycode.UP) {
-            keyboard.y = -1;
-        } else if (e.which === Keycode.DOWN) {
-            keyboard.y = 1;
-        }
-        room.send(['key', keyboard]);
-    });
+    
+    window.addEventListener("contextmenu",function(e:MouseEvent){
+    //Context menus is right lcick
+    console.log("Mouse event of "+e.which);
+    
+      if(e.which == 3){
+          var pickResult = scene.pick(e.clientX,e.clientY,function(meshy){
+              if(meshy !== null)
+                return true;
+            return false;
+          },false,camera);
 
-    window.addEventListener("keyup", function(e) {
-        if (e.which === Keycode.LEFT) {
-            keyboard.x = 0;
-        } else if (e.which === Keycode.RIGHT) {
-            keyboard.x = 0;
-        } else if (e.which === Keycode.UP) {
-            keyboard.y = 0;
-        } else if (e.which === Keycode.DOWN) {
-            keyboard.y = 0;
-        }
-        room.send(['key', keyboard]);
+          if(pickResult.hit){
+                console.log("Collided with Object");
+                //Click Position: clientX is the entire window not the document.
+                const pos: MouseClick  = {x:pickResult.pickedPoint.x,y:0,z:pickResult.pickedPoint.z}
+                //We need to move the player
+                room.send(['playerMove', pos]);
+          }
+         
+          
+      }
     });
+    
 
     // Resize the engine on window resize
     window.addEventListener('resize', function() {
