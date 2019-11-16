@@ -2,6 +2,7 @@ import { Schema, type } from "@colyseus/schema";
 import {PhysicPlayer} from "../entities/PhysicsEntities";
 
 import * as BABYLON from "babylonjs";
+import { float } from "babylonjs";
 export interface MouseClick{
     x:number;
     y:number;
@@ -18,7 +19,7 @@ export class ServerPlayer extends Schema {
     
     @type("string") name: string;
 
-  
+    @type("float64") health: float;
  
     @type(Position)
     position = new Position();
