@@ -22,7 +22,7 @@ export class Position extends Schema {
 }
 
 
-export class Weapon extends Schema{
+export class ServerWeapon extends Schema{
     @type(Position) pos = new Position(0,0,0);
     constructor(position:Position){
         super();
@@ -37,7 +37,7 @@ export class ServerPlayer extends Schema {
 
     @type("float64") health: float;
  
-    @type({map:Weapon}) weapons = new MapSchema<Weapon>();
+    @type({map:ServerWeapon}) weapons = new MapSchema<ServerWeapon>();
 
     @type(Position)
     position = new Position(0,0,0);
@@ -50,6 +50,7 @@ export class ServerPlayer extends Schema {
 
     PopulateServerPlayer(physPlayer:PhysicPlayer){
         physPlayer.Update();
+
         this.health = physPlayer.health;
         this.SetPosition(physPlayer.position);
 
@@ -63,7 +64,7 @@ export class ServerPlayer extends Schema {
 
             }
             else{
-                this.weapons[weaponId] = new Weapon(new Position(weapon.position.x,weapon.position.y,weapon.position.z));
+                this.weapons[weaponId] = new ServerWeapon(new Position(weapon.position.x,weapon.position.y,weapon.position.z));
             }
             
         }

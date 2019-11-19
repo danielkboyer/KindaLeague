@@ -2,6 +2,7 @@
 import {ServerPlayer} from "../entities/ServerEntities";
 import * as BABYLON from "babylonjs";
 import { int } from "babylonjs";
+
 export let physicsPlayers: {[id:string]:PhysicPlayer} = {};
 
 class MoveableObject{
@@ -25,11 +26,12 @@ export class PhysicsWeapon extends MoveableObject
     damage: number;
     mesh: BABYLON.Mesh;
 
-    //True if the bullet has been fired.
+    //True if the weapon has been fired.
     fired: boolean; 
     constructor(id:string,position:BABYLON.Vector3,damage:number){
         super(id,position);
         this.damage = damage;
+        this.mesh.position = this.position;
     }
 
     //Returns false if the weapon should be disposed... AKA bullet hit player remove it.
@@ -67,7 +69,6 @@ export class PhysicsBullet extends PhysicsWeapon
 {
 
     shotDistance: BABYLON.Vector3;
-    mesh:BABYLON.Mesh;
 
     constructor(id:string,position:BABYLON.Vector3,damage:number,mesh:BABYLON.Mesh,shotDistance:BABYLON.Vector3,fired:boolean){
         super(id,position,damage);
@@ -97,6 +98,8 @@ export class PhysicsBullet extends PhysicsWeapon
                 return false;
             }
         }
+
+        
         return super.Update();
     }
 }

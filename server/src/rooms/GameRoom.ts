@@ -31,6 +31,7 @@ export class GameRoom extends Room<StateHandler> {
         this.state.players[client.sessionId] = player;
     }
 
+    //Comes from the Client
     onMessage (client: Client, message: any) {
         const [event, data] = message;
         const player: PhysicPlayer = physicsPlayers[client.sessionId];
