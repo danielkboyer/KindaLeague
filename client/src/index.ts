@@ -25,11 +25,11 @@ var scene = new BABYLON.Scene(engine);
 var camera = new BABYLON.UniversalCamera("camera1", new BABYLON.Vector3(0, 5, -10), scene);
 
 //Units
-var cameraZOffset = 3;
+var cameraZOffset = 2;
 //Units
-var cameraYHeight = 15;
+var cameraYHeight = 2;
 //Degrees
-var cameraXRotation = 76;
+var cameraXRotation = 55;
 // This targets the camera to scene origin
 camera.rotation.x = BABYLON.Tools.ToRadians(cameraXRotation);
 camera.rotation.y = Math.PI;
@@ -40,13 +40,29 @@ camera.attachControl(canvas, true);
 
 camera.inputs.clear();
 // This creates a light, aiming 0,1,0 - to the sky (non-mesh)
-var light = new BABYLON.HemisphericLight("light1", new BABYLON.Vector3(0, 1, 0), scene);
+var light = new BABYLON.DirectionalLight("light1", new BABYLON.Vector3(1, -1, 0), scene);
 
 // Default intensity is 1. Let's dim the light a small amount
-light.intensity = .5;
+light.intensity = 3;
 
-// Our built-in 'ground' shape. Params: name, width, depth, subdivs, scene
-var ground = BABYLON.Mesh.CreateGround("ground1", 6, 6, 2, scene);
+//Shadow
+
+var shadowGenerator = new BABYLON.ShadowGenerator(1024,light);
+shadowGenerator.usePoissonSampling = true;
+
+BABYLON.SceneLoader.ImportMesh("","","TheArena01.babylon", scene, function(newmeshes){
+    newmeshes.forEach(function (mesh){
+        
+    
+        mesh.receiveShadows = true;
+        mesh.rotation = new BABYLON.Vector3(0,BABYLON.Tools.ToRadians (90),0);
+        mesh.receiveShadows = true;
+        shadowGenerator.getShadowMap().renderList.push(mesh);
+    
+        
+    });
+    })
+    
 
 console.log("Created Ground");
 // Attach default camera mouse navigation
@@ -61,8 +77,8 @@ client.joinOrCreate<StateHandler>("game").then(room => {
 
         // Our built-in 'sphere' shape. Params: name, subdivs, size, scene
         console.log("User joined room: "+player.name+" mesh position: "+player.position);
-        playerViews[key] = new PhysicPlayer(key,BABYLON.Mesh.CreateSphere("sphere1", 16, 2, scene),new Vector3(player.position.x,player.position.y,player.position.z),100);
-        
+        playerViews[key] = new PhysicPlayer(key,BABYLON.Mesh.CreateSphere("sphere1", 16, .2, scene),new Vector3(player.position.x,player.position.y,player.position.z),100);
+        shadowGenerator.getShadowMap().renderList.push(playerViews[key].mesh);
       
     
         // Move the sphere upward 1/2 its height
@@ -102,7 +118,7 @@ client.joinOrCreate<StateHandler>("game").then(room => {
             }
             else{
                 console.log("New Bullet added to client");
-                physicP.weapons.push(new PhysicsBullet("Bullet",PositionToVector(player.weapons[weaponId].pos),10,BABYLON.Mesh.CreateSphere("sphere1", 16,.2, scene),null,true));
+                physicP.weapons.push(new PhysicsBullet("Bullet",PositionToVector(player.weapons[weaponId].pos),10,BABYLON.Mesh.CreateSphere("sphere1", 16,.05, scene),null,true));
             }
            
         }
@@ -143,7 +159,7 @@ client.joinOrCreate<StateHandler>("game").then(room => {
             if(pickResult.hit){
                   console.log("Collided with Object");
                   //Click Position: clientX is the entire window not the document.
-                  const pos: MouseClick  = {x:pickResult.pickedPoint.x,y:0,z:pickResult.pickedPoint.z}
+                  const pos: MouseClick  = {x:pickResult.pickedPoint.x,y:pickResult.pickedPoint.y,z:pickResult.pickedPoint.z}
 
                   //We need to move the player
                   room.send(['basicAttack', pos]);
@@ -164,7 +180,7 @@ client.joinOrCreate<StateHandler>("game").then(room => {
           if(pickResult.hit){
                 console.log("Collided with Object");
                 //Click Position: clientX is the entire window not the document.
-                const pos: MouseClick  = {x:pickResult.pickedPoint.x,y:0,z:pickResult.pickedPoint.z}
+                const pos: MouseClick  = {x:pickResult.pickedPoint.x,y:pickResult.pickedPoint.y,z:pickResult.pickedPoint.z}
                 //We need to move the player
                 room.send(['playerMove', pos]);
           }

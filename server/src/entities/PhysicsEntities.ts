@@ -139,9 +139,9 @@ export class PhysicPlayer extends MoveableObject{
     //Moves the player towards the click position if not already there
     Move(){
         var newVector = this.clickPosition.subtract(this.mesh.position);
-        if(newVector.length() < .5)
+        if(newVector.length() < .05)
             return;
-        this.mesh.translate(newVector.normalize(),.09,BABYLON.Space.WORLD);
+        this.mesh.translate(newVector.normalize(),.02,BABYLON.Space.WORLD);
 
         
     }

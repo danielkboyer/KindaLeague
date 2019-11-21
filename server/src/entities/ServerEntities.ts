@@ -17,7 +17,6 @@ export class Position extends Schema {
         this.x = x;
         this.y = y;
         this.z = z;
-
     }
 }
 
