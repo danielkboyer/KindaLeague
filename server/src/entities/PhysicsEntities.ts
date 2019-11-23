@@ -31,13 +31,14 @@ export class PhysicsWeapon extends MoveableObject
     constructor(id:string,position:BABYLON.Vector3,damage:number){
         super(id,position);
         this.damage = damage;
-        this.mesh.position = this.position;
+        //this.mesh.position = position;
     }
 
     //Returns false if the weapon should be disposed... AKA bullet hit player remove it.
     Update():boolean{
         if(this.fired){
             var collidedWith = this.CheckCollision();
+            //var collidedWith = null;
             if(collidedWith != null){
                 //applydamage to player
                 collidedWith.health -= this.OnHit();
@@ -73,6 +74,7 @@ export class PhysicsBullet extends PhysicsWeapon
     constructor(id:string,position:BABYLON.Vector3,damage:number,mesh:BABYLON.Mesh,shotDistance:BABYLON.Vector3,fired:boolean){
         super(id,position,damage);
         this.mesh = mesh;
+        this.mesh.position = position;
         this.shotDistance = shotDistance;
         this.fired = fired;
     }
@@ -86,7 +88,7 @@ export class PhysicsBullet extends PhysicsWeapon
             return false;
 
         
-        this.mesh.translate(newVector.normalize(),.2,BABYLON.Space.WORLD);
+        this.mesh.translate(newVector.normalize(),.07,BABYLON.Space.WORLD);
         this.position = this.mesh.position;
         return true;
     }
@@ -129,7 +131,8 @@ export class PhysicPlayer extends MoveableObject{
             
             if(!this.weapons[weaponId].Update()){
                 //Remove the weapon here.
-               
+          
+                delete this.weapons[weaponId];
             }
         }
         //Set the position of the movable object
@@ -142,7 +145,7 @@ export class PhysicPlayer extends MoveableObject{
         if(newVector.length() < .05)
             return;
         this.mesh.translate(newVector.normalize(),.02,BABYLON.Space.WORLD);
-
+        
         
     }
 

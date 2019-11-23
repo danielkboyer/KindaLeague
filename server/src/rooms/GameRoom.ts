@@ -41,9 +41,8 @@ export class GameRoom extends Room<StateHandler> {
         }
 
         if(event === "basicAttack"){
-            var bulletPosition = player.position;
-            bulletPosition.y  = 1;
-            player.weapons.push(new PhysicsBullet("bullet",player.position,10,BABYLON.Mesh.CreateSphere("sphere1", 16,.05, this.state.scene),new Vector3(data.x,data.y,data.z),true))
+         
+            player.weapons.push(new PhysicsBullet("bullet",new Vector3(player.position.x,player.position.y,player.position.z),10,BABYLON.Mesh.CreateSphere("sphere1", 16,.05, this.state.scene),new Vector3(data.x,data.y,data.z),true))
             
         }
     }
