@@ -25,11 +25,13 @@ export class PhysicsWeapon extends MoveableObject
 {
     damage: number;
     mesh: BABYLON.Mesh;
-
+    //The player it belongs to.
+    playerId:string;
     //True if the weapon has been fired.
     fired: boolean; 
-    constructor(id:string,position:BABYLON.Vector3,damage:number){
+    constructor(id:string,position:BABYLON.Vector3,damage:number,playerId:string){
         super(id,position);
+        this.playerId = playerId;
         this.damage = damage;
         //this.mesh.position = position;
     }
@@ -55,9 +57,11 @@ export class PhysicsWeapon extends MoveableObject
 
     CheckCollision(){
         for(const sessionId in physicsPlayers){
-            const physPlayer:PhysicPlayer = physicsPlayers[sessionId];
-            if(this.mesh.intersectsMesh(physPlayer.mesh)){
-                return physPlayer;
+            if(sessionId != this.playerId){
+                const physPlayer:PhysicPlayer = physicsPlayers[sessionId];
+                if(this.mesh.intersectsMesh(physPlayer.mesh)){
+                    return physPlayer;
+                }
             }
         }
     }
@@ -71,8 +75,8 @@ export class PhysicsBullet extends PhysicsWeapon
 
     shotDistance: BABYLON.Vector3;
 
-    constructor(id:string,position:BABYLON.Vector3,damage:number,mesh:BABYLON.Mesh,shotDistance:BABYLON.Vector3,fired:boolean){
-        super(id,position,damage);
+    constructor(id:string,position:BABYLON.Vector3,damage:number,playerId: string,mesh:BABYLON.Mesh,shotDistance:BABYLON.Vector3,fired:boolean){
+        super(id,position,damage,playerId);
         this.mesh = mesh;
         this.mesh.position = position;
         this.shotDistance = shotDistance;

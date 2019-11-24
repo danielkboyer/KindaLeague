@@ -11,7 +11,8 @@ import { StateHandler } from "../../server/src/rooms/StateHandler";
 import {  Position, MouseClick } from "../../server/src/entities/ServerEntities";
 import { ClientPlayer } from "./game/model/ClientPlayer";
 import { Vector3, CameraInputTypes } from "babylonjs";
-import { PhysicPlayer, PhysicsWeapon, PhysicsBullet } from "../../server/src/entities/PhysicsEntities";
+import { PhysicPlayer, PhysicsWeapon, PhysicsBullet, physicsPlayers } from "../../server/src/entities/PhysicsEntities";
+import { string } from "@colyseus/schema/lib/encoding/decode";
 
 const canvas = document.getElementById('game') as HTMLCanvasElement;
 
@@ -22,8 +23,11 @@ var scene = new BABYLON.Scene(engine);
 
 // This creates and positions a free camera (non-mesh)
 // This creates and positions a free camera (non-mesh)
+//#region Camera
 var camera = new BABYLON.UniversalCamera("camera1", new BABYLON.Vector3(0, 5, -10), scene);
 
+var cameraMoveToPos:BABYLON.Vector3;
+var cameraMoveSpeed = 0.18;
 //Units
 var cameraZOffset = 2;
 //Units
@@ -34,7 +38,10 @@ var cameraXRotation = 55;
 camera.rotation.x = BABYLON.Tools.ToRadians(cameraXRotation);
 camera.rotation.y = Math.PI;
 camera.rotation.z = 0;
+//#endregion
 
+var playerId:string;
+var playerSpeed = .20;
 // This attaches the camera to the canvas
 camera.attachControl(canvas, true);
 
@@ -64,7 +71,10 @@ BABYLON.SceneLoader.ImportMesh("","","TheArena01.babylon", scene, function(newme
     })
     
 
-console.log("Created Ground");
+
+    
+ 
+
 // Attach default camera mouse navigation
 // camera.attachControl(canvas);
 
@@ -72,8 +82,11 @@ console.log("Created Ground");
 client.joinOrCreate<StateHandler>("game").then(room => {
     const playerViews: {[id: string]: PhysicPlayer} = {};
 
+
+
     console.log("Room started on client: "+room.name);
     room.state.players.onAdd = function(player, key) {
+
 
         // Our built-in 'sphere' shape. Params: name, subdivs, size, scene
         console.log("User joined room: "+player.name+" mesh position: "+player.position);
@@ -87,9 +100,20 @@ client.joinOrCreate<StateHandler>("game").then(room => {
     
 
         if(key === room.sessionId){
+            playerId = room.sessionId;
 
             console.log("Setting active camera for "+room.sessionId);
-            camera.position = new BABYLON.Vector3(player.position.x,cameraYHeight,player.position.z+cameraZOffset);
+            cameraMoveToPos = new BABYLON.Vector3(player.position.x,cameraYHeight,player.position.z+cameraZOffset);
+
+
+            
+            scene.registerBeforeRender(function () {
+            
+                camera.position = BABYLON.Vector3.Lerp(camera.position,cameraMoveToPos,cameraMoveSpeed);
+                playerViews[playerId].mesh.position = BABYLON.Vector3.Lerp(playerViews[playerId].mesh.position,playerViews[playerId].clickPosition,playerSpeed);
+                
+            });
+           
             //camera.rotation.z = 10;
             //camera.setTarget(playerViews[key].mesh.position);
            // scene.activeCamera = playerViews[key].camera;
@@ -105,7 +129,7 @@ client.joinOrCreate<StateHandler>("game").then(room => {
 
         //console.log("Server moved player move locally");
         const physicP : PhysicPlayer = playerViews[key];
-        physicP.mesh.position = PositionToVector(player.position);
+        physicP.clickPosition = PositionToVector(player.position);
         physicP.health = player.health;
 
         
@@ -118,7 +142,7 @@ client.joinOrCreate<StateHandler>("game").then(room => {
             }
             else{
                 console.log("New Bullet added to client");
-                physicP.weapons.push(new PhysicsBullet("Bullet",PositionToVector(player.weapons[weaponId].pos),10,BABYLON.Mesh.CreateSphere("sphere1", 16,.05, scene),null,true));
+                physicP.weapons.push(new PhysicsBullet("Bullet",PositionToVector(player.weapons[weaponId].pos),10,key,BABYLON.Mesh.CreateSphere("sphere1", 16,.05, scene),null,true));
             }
            
         }
@@ -127,7 +151,8 @@ client.joinOrCreate<StateHandler>("game").then(room => {
         //playerViews[key].camera.position.y -=15;
         if(room.sessionId === key){
             console.log("This Players Health: "+physicP.health);
-            camera.position = new BABYLON.Vector3(player.position.x,cameraYHeight,player.position.z+cameraZOffset);
+            cameraMoveToPos = new BABYLON.Vector3(player.position.x,cameraYHeight,player.position.z+cameraZOffset);
+
             //camera.setTarget(playerViews[key].mesh.position);
             //console.log("Camear position: x"+camera.rotation.x+" y:"+camera.rotation.y+" z:"+camera.rotation.z);
        
