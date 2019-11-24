@@ -27,7 +27,7 @@ var scene = new BABYLON.Scene(engine);
 var camera = new BABYLON.UniversalCamera("camera1", new BABYLON.Vector3(0, 5, -10), scene);
 
 var cameraMoveToPos:BABYLON.Vector3;
-var cameraMoveSpeed = 0.18;
+var cameraMoveSpeed = 0.27;
 //Units
 var cameraZOffset = 2;
 //Units
@@ -41,7 +41,7 @@ camera.rotation.z = 0;
 //#endregion
 
 var playerId:string;
-var playerSpeed = .20;
+var playerSpeed = .27;
 // This attaches the camera to the canvas
 camera.attachControl(canvas, true);
 
@@ -97,28 +97,19 @@ client.joinOrCreate<StateHandler>("game").then(room => {
         // Move the sphere upward 1/2 its height
         //playerViews[key].mesh.position = new Vector3(player.position.x,player.position.y,player.position.z);
 
-    
-
-        if(key === room.sessionId){
-            playerId = room.sessionId;
-
-            console.log("Setting active camera for "+room.sessionId);
-            cameraMoveToPos = new BABYLON.Vector3(player.position.x,cameraYHeight,player.position.z+cameraZOffset);
-
-
+        scene.registerBeforeRender(function () {
             
-            scene.registerBeforeRender(function () {
-            
+            if(key === room.sessionId){
+                playerId = room.sessionId;
+                cameraMoveToPos = new BABYLON.Vector3(player.position.x,cameraYHeight,player.position.z+cameraZOffset);
                 camera.position = BABYLON.Vector3.Lerp(camera.position,cameraMoveToPos,cameraMoveSpeed);
-                playerViews[playerId].mesh.position = BABYLON.Vector3.Lerp(playerViews[playerId].mesh.position,playerViews[playerId].clickPosition,playerSpeed);
-                
-            });
-           
-            //camera.rotation.z = 10;
-            //camera.setTarget(playerViews[key].mesh.position);
-           // scene.activeCamera = playerViews[key].camera;
+            }
+            playerViews[key].mesh.position = BABYLON.Vector3.Lerp(playerViews[key].mesh.position,playerViews[key].clickPosition,playerSpeed);
             
-        }
+        });
+
+      
+        
         // Set camera to follow current player
     
         
@@ -165,9 +156,7 @@ client.joinOrCreate<StateHandler>("game").then(room => {
         delete playerViews[key];
     };
 
-    room.onStateChange((state) => {
-        console.log("New room state:", state.toJSON());
-    });
+   
 
     window.addEventListener("click",function(e:MouseEvent){
 
@@ -206,6 +195,11 @@ client.joinOrCreate<StateHandler>("game").then(room => {
                 console.log("Collided with Object");
                 //Click Position: clientX is the entire window not the document.
                 const pos: MouseClick  = {x:pickResult.pickedPoint.x,y:pickResult.pickedPoint.y,z:pickResult.pickedPoint.z}
+                //var clientMovePrediction = playerViews[playerId].Move(MouseToVector(pos));
+                //if(clientMovePrediction != null){
+                //    playerViews[playerId].mesh.translate(clientMovePrediction,0.015,BABYLON.Space.WORLD);
+                //    playerViews[playerId].clickPosition = playerViews[playerId].mesh.position;
+                //}
                 //We need to move the player
                 room.send(['playerMove', pos]);
           }
@@ -223,6 +217,10 @@ client.joinOrCreate<StateHandler>("game").then(room => {
 
 function PositionToVector(pos: Position){
     return new Vector3(pos.x,pos.y,pos.z);
+}
+
+function MouseToVector(mouse: MouseClick){
+    return new Vector3(mouse.x,mouse.y,mouse.z);
 }
 
 // Scene render loop

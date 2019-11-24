@@ -1,7 +1,7 @@
 
 import {ServerPlayer} from "../entities/ServerEntities";
 import * as BABYLON from "babylonjs";
-import { int } from "babylonjs";
+import { int, Vector3 } from "babylonjs";
 
 export let physicsPlayers: {[id:string]:PhysicPlayer} = {};
 
@@ -129,7 +129,9 @@ export class PhysicPlayer extends MoveableObject{
    //Called once per frame
     Update(){
         //Move the player if needed.
-        this.Move();
+        var moveTo = this.Move(this.clickPosition);
+        if(moveTo!=null)
+            this.mesh.translate(moveTo,0.015,BABYLON.Space.WORLD);
 
         for(var weaponId in this.weapons){
             
@@ -144,11 +146,11 @@ export class PhysicPlayer extends MoveableObject{
     }
 
     //Moves the player towards the click position if not already there
-    Move(){
-        var newVector = this.clickPosition.subtract(this.mesh.position);
+    Move(goTo:BABYLON.Vector3):BABYLON.Vector3{
+        var newVector = goTo.subtract(this.mesh.position);
         if(newVector.length() < .05)
-            return;
-        this.mesh.translate(newVector.normalize(),.02,BABYLON.Space.WORLD);
+            return null;
+        return newVector.normalize();
         
         
     }
